@@ -1,24 +1,28 @@
-import discord
-from discord.ext import commands
 import os
+import asyncio
+import discord
 from dotenv import load_dotenv
+from discord.ext import commands
 
 load_dotenv()
 
-# Create a new bot instance
-bot = commands.Bot(command_prefix='!')
+TOKEN: str = os.getenv("token")
 
-# Get the directory path where the command files are located
-commands_dir = './commands'
+bot = commands.Bot(command_prefix="/", intents=discord.Intents.all())
 
-# Iterate over the files in the directory
-for filename in os.listdir(commands_dir):
-    if filename.endswith('.py'):
-        # Remove the file extension to get the command name
-        command_name = filename[:-3]
+async def on_ready():
+    print(f'Logged in as {bot.user}')
+
+async def load():
+    for filename in os.listdir('./commands'):
+        if filename.endswith('.py'):
+            await bot.load_extension(f'commands.{filename[:-3]}')
+            print(f'Loaded {filename[:-3]}')
         
-        # Load the command as an extension
-        bot.load_extension(f'commands.{command_name}')
+async def main():
+    await load()
+    await bot.start(TOKEN)
+    await on_ready()
+    await bot.tree.sync()
 
-# Run the bot
-bot.run(os.getenv('token'))
+asyncio.run(main())
