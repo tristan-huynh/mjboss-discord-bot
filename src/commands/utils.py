@@ -10,7 +10,7 @@ class Utils(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.start_time = time.time()
-        self.bot.version = "1.0.0"
+        self.bot.version = os.getenv("version")
 
     @discord.slash_command(description="Show the bot's status")
     async def status(self, ctx: discord.ApplicationContext):
@@ -54,11 +54,20 @@ class Utils(commands.Cog):
     async def avatar(self, ctx: discord.ApplicationContext, user: discord.User):
         embed = discord.Embed(title="Avatar", color=discord.Color.blue())
         embed.set_image(url=user.avatar.url)
+        
+        embed.set_footer(icon_url=self.bot.user.avatar.url, text=f"{self.bot.user.name} v{self.bot.version}")
         await ctx.respond(embed=embed)
         
     @discord.slash_command(description="Get server member count")
     async def membercount(self, ctx: discord.ApplicationContext):
-        await ctx.respond(f"Member count: {ctx.guild.member_count}")
+        bot_count = sum(member.bot for member in ctx.guild.members)
+        user_count = len(ctx.guild.members) - bot_count
+        embed = discord.Embed(title="Member Count", color=discord.Color.blue())
+        embed.add_field(name="Bot Count", value=bot_count, inline=True)
+        embed.add_field(name="User Count", value=user_count, inline=True)
+        
+        embed.set_footer(icon_url=self.bot.user.avatar.url, text=f"{self.bot.user.name} v{self.bot.version}")
+        await ctx.respond(embed=embed)
         
     @discord.slash_command(description="Get server info")
     async def serverinfo(self, ctx: discord.ApplicationContext):
@@ -102,6 +111,7 @@ class Utils(commands.Cog):
             await ctx.respond(embed=embed)
         except:
             await ctx.respond("Failed to get weather info.", ephemeral=True)
+        
         
     
 
