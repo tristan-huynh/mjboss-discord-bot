@@ -45,25 +45,33 @@ class Moderation(commands.Cog):
         
     @discord.slash_command(description="Self destruct the bot")
     async def selfdestruct(self, ctx: discord.ApplicationContext):
-        await ctx.guild.leave()
+        if ctx.author.guild_permissions.administrator:
+            await ctx.respond(f"Bye bye! :wave:")
+            await ctx.guild.leave()
+        else:
+            await ctx.respond("You do not have administrative rights.")
+
         
     @purge.command(description="Purge messages from a channel")
     async def channel(self, ctx: discord.ApplicationContext, limit: int):
         await ctx.channel.purge(limit=limit)
         await ctx.respond(f"{limit} messages have been purged.")
         
-    @purge.command(description="Purge messages from a user")
+    @purge.command(description="Purge all messages from a user")
     async def user(self, ctx: discord.ApplicationContext, user: discord.User, limit: int):
         # def check(message):
         #     return message.author == user
+        
+        # Modify so it deletses in chronological order
         for channel in ctx.guild.channels:
             if isinstance(channel, discord.TextChannel):
                 await channel.purge(limit=limit, check=lambda message: message.author == user)
         await ctx.respond(f"{limit} messages from {user.mention} have been purged.")
         
-    
-    
+    # @discord.slash_command(description="Show a moderators statistics")
+    # async def modstat(self, ctx: discord.ApplicationContext, user: discord.User):
         
+                
     
 def setup(bot):
     bot.add_cog(Moderation(bot))
