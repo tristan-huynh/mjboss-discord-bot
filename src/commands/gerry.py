@@ -14,7 +14,7 @@ class Gerry(commands.Cog):
     @discord.slash_command(description="Hi")
     async def kent(self, ctx):
         user = await self.bot.fetch_user(527972650409132033)
-        await user.send("Kent")
+        await user.send("Hi")
         
     #@discord.slash_command()
 
