@@ -147,8 +147,10 @@ class Moderation(commands.Cog):
         if amount < 1 or amount > 100:
             await interaction.response.send_message("Please enter a number between 1 and 100.", ephemeral=False)
             return
+        
+        await interaction.response.defer(ephemeral=False)
         deleted = await interaction.channel.purge(limit=amount + 1)
-        await interaction.send(f"Purged {len(deleted) - 1} messages.", ephemeral=False)
+        await interaction.followup.send(f"Purged {len(deleted) - 1} messages.", ephemeral=False)
     
     @purge_group.command(name="user", description="Purge messages from a user")
     @app_commands.describe(member="The member to purge", amount="The number of messages to purge")

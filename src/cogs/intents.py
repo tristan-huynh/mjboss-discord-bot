@@ -77,7 +77,7 @@ class ReactionListener(commands.Cog):
 
         if self.bot.user in message.mentions:
             # Extract an Instagram reel URL using regex
-            instagram_match = re.search(r"(https?://(?:www\.)?instagram\.com/(?:reel|p)/[^/\s]+/?)", message.content)
+            instagram_match = re.search(r"(https?://(?:www\.)?instagram\.com/(?:reel[s]?|p)/[^/\s]+/?)", message.content)
             twitter_match = re.search(r"(https?://(?:www\.)?twitter\.com/[^/\s]+/status/[^/\s]+)", message.content)
             reddit_match = re.search(r"(https?://(?:www\.)?reddit\.com/r/[^/\s]+/comments/[^/\s]+)", message.content)
             user_agents = [
@@ -125,7 +125,10 @@ class ReactionListener(commands.Cog):
 
 
                     # Build an embed linking to the original reel
-                    embed = discord.Embed(title=f"{metadata['caption']}", url=reel_url, color=self.bot.embed_color)
+                    caption = metadata['caption'] if metadata['caption'] else "No caption available."
+                    if len(caption) > 100:
+                        caption = caption[:100] + "..."
+                    embed = discord.Embed(title=caption, url=reel_url, color=self.bot.embed_color)
                     embed.set_author(name=f"{metadata['owner_username']} • 💔 {metadata['likes']} • 💬 {metadata['comments']}", icon_url=metadata["owner_profile_pic"])
                     embed.timestamp = post.date_utc
                     embed.set_footer(

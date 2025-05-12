@@ -47,19 +47,28 @@ class SpecialWord(commands.Cog):
             return
 
         embed = discord.Embed(
-            title="Global Leaderboard",
+            title="Global Slur Leaderboard",
             color=self.bot.embed_color,
         )
         embed.set_footer(icon_url=self.bot.user.avatar.url, text=f"{self.bot.user.name} v{self.bot.version}")
         embed.timestamp = discord.utils.utcnow()
+        leaderboard_str=""
         for index, entry in enumerate(leaderboard[:10], start=1):
-            embed.add_field(
-            name=f"{index}. **{entry['username']}** - {entry['word_count']}",
-            value=f"",
-            inline=False
-            )
-            
+            leaderboard_str += f"{index}. **{entry['username']}** - {entry['word_count']}\n"
+        embed.add_field(name="", value=leaderboard_str, inline=False)
+        
+        # Get current user's word count and rank
+        user_id = str(interaction.user.id)
+        user_doc = await self.collection.find_one({"_id": user_id})
+        user_count = user_doc.get("word_count", 0) if user_doc else 0
+        rank = await self.collection.count_documents({"word_count": {"$gt": user_count}}) + 1
 
+        embed.add_field(
+            name="Your Rank",
+            value=f"Rank #{rank}: **{interaction.user.name}** - {user_count}",
+            inline=False
+        )
+        
         await interaction.response.send_message(embed=embed)
         
     @leaderboard.error
