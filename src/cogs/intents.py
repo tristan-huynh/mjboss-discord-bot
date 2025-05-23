@@ -1,9 +1,11 @@
 from discord.ext import commands
 from discord import app_commands
 from io import BytesIO
-import discord, re, requests, logging, dotenv, random
+import discord, re, requests, logging, dotenv
 
-import instaloader, praw
+import instaloader, praw, yt_dlp, random, curl_cffi
+from datetime import datetime
+from curl_cffi import requests as curl_requests
 
 class ReactionListener(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -80,63 +82,124 @@ class ReactionListener(commands.Cog):
             instagram_match = re.search(r"(https?://(?:www\.)?instagram\.com/(?:reel[s]?|p)/[^/\s]+/?)", message.content)
             twitter_match = re.search(r"(https?://(?:www\.)?twitter\.com/[^/\s]+/status/[^/\s]+)", message.content)
             reddit_match = re.search(r"(https?://(?:www\.)?reddit\.com/r/[^/\s]+/comments/[^/\s]+)", message.content)
-            user_agents = [
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0',
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0', 
-                'Mozilla/5.0 (X11; U; Linux i586; en-US; rv:1.7.3) Gecko/20040924Epiphany/1.4.4 (Ubuntu)' 
+            # Replace the static user agent list with curl-cffi custom headers.
+            custom_user_agents = [
+                'curl-cffi/0.0 (Windows NT 10.0; Win64; x64)',
+                'curl-cffi/0.0 (X11; Linux i686)',
+                'curl-cffi/0.0 (Macintosh; Intel Mac OS X 10_15_7)'
             ]
+            headers = {"User-Agent": random.choice(custom_user_agents)}
 
             if instagram_match:
+                
+                # reel_url = instagram_match.group(1)
+                # try:
+                #     loader = instaloader.Instaloader()
+                    
+                #     loader.context.user_agent = random.choice(user_agents)
+                #     # loader.context._session.cookies.set(
+                #     #     name="sessionid",
+                #     #     value=dotenv.get_key(dotenv.find_dotenv(), "instagram_sessionid"),
+                #     #     domain=".instagram.com",
+                #     #     path="/",
+                #     # )
+                #     # Extract the shortcode from the URL
+                #     shortcode = reel_url.rstrip("/").split("/")[-1]
+                #     logging.info(f"Instagram: Shortcode: {shortcode}")
+                #     post = instaloader.Post.from_shortcode(loader.context, shortcode)
+                    
+                #     metadata = {
+                #         "shortcode": post.shortcode,
+                #         "owner_username": post.owner_username,
+                #         "caption": post.caption,
+                #         "video_url": post.video_url if post.is_video else None,
+                #         "image_url": post.url if not post.is_video else None,
+                #         "likes": post.likes,
+                #         "comments": post.comments,
+                #         "timestamp": post.date_utc.strftime("%Y-%m-%d %H:%M:%S"),
+                #         "owner_profile_pic": post.owner_profile.profile_pic_url,
+                #     }
+                #     logging.debug(f"Instagram: Metadata: {metadata}")
+                #     if post.is_video:
+                #         media_url = post.video_url
+                #         logging.debug(f"Instagram: Media_URL: {media_url}")
+                    
+                #     else:
+                #         media_url = post.url
+                #         logging.debug(f"Instagram: Media_URL: {media_url}")
+
+
+                #     # Build an embed linking to the original reel
+                #     caption = metadata['caption'] if metadata['caption'] else "No caption available."
+                #     if len(caption) > 100:
+                #         caption = caption[:100] + "..."
+                #     embed = discord.Embed(title=caption, url=reel_url, color=self.bot.embed_color)
+                #     embed.set_author(name=f"{metadata['owner_username']} • 💔 {metadata['likes']} • 💬 {metadata['comments']}", icon_url=metadata["owner_profile_pic"])
+                #     embed.timestamp = post.date_utc
+                #     embed.set_footer(
+                #         icon_url=message.author.avatar.url,
+                #         text=f"Requested by {message.author.name}"
+                #     )
+                #     await message.channel.send(embed=embed, file=discord.File(BytesIO(requests.get(media_url).content), filename="reel.mp4"))
+                #     # Delete the original message and send the file with embed
+                #     await message.delete()
+                # except Exception as e:
+                #     await message.channel.send(f"Failed to process the Instagram link. Error: {e}")
+                #     logging.error(f"Error processing Instagram link: {e}")
                 reel_url = instagram_match.group(1)
                 try:
-                    loader = instaloader.Instaloader()
-                    
-                    loader.context.user_agent = random.choice(user_agents)
-                    # loader.context._session.cookies.set(
-                    #     name="sessionid",
-                    #     value=dotenv.get_key(dotenv.find_dotenv(), "instagram_sessionid"),
-                    #     domain=".instagram.com",
-                    #     path="/",
-                    # )
-                    # Extract the shortcode from the URL
-                    shortcode = reel_url.rstrip("/").split("/")[-1]
-                    logging.info(f"Instagram: Shortcode: {shortcode}")
-                    post = instaloader.Post.from_shortcode(loader.context, shortcode)
-                    
-                    metadata = {
-                        "shortcode": post.shortcode,
-                        "owner_username": post.owner_username,
-                        "caption": post.caption,
-                        "video_url": post.video_url if post.is_video else None,
-                        "image_url": post.url if not post.is_video else None,
-                        "likes": post.likes,
-                        "comments": post.comments,
-                        "timestamp": post.date_utc.strftime("%Y-%m-%d %H:%M:%S"),
-                        "owner_profile_pic": post.owner_profile.profile_pic_url,
+                    ydl_opts = {
+                        'skip_download': True,
+                        'quiet': False,
+                        'noplaylist': True,
                     }
-                    logging.debug(f"Instagram: Metadata: {metadata}")
-                    if post.is_video:
-                        media_url = post.video_url
-                        logging.debug(f"Instagram: Media_URL: {media_url}")
+                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        info = ydl.extract_info(reel_url, download=False)
+                        
+                    logging.info(f"Instagram: reel_url: {reel_url}")
                     
-                    else:
-                        media_url = post.url
-                        logging.debug(f"Instagram: Media_URL: {media_url}")
-
-
-                    # Build an embed linking to the original reel
-                    caption = metadata['caption'] if metadata['caption'] else "No caption available."
+                    caption = info.get('description') or "No caption available."
                     if len(caption) > 100:
                         caption = caption[:100] + "..."
+                    owner_username = info.get('uploader') or "Unknown"
+                    likes = info.get('like_count', "N/A")
+                    comments = info.get('comment_count', "N/A")
+
+                    media_url = None
+                    if 'formats' in info and info['formats']:
+                        media_url = info['formats'][-1].get('url')
+                    else:
+                        media_url = info.get('url')
+                    
+                    if not media_url:
+                        await message.channel.send("No downloadable media found.")
+                        return
+
+
                     embed = discord.Embed(title=caption, url=reel_url, color=self.bot.embed_color)
-                    embed.set_author(name=f"{metadata['owner_username']} • 💔 {metadata['likes']} • 💬 {metadata['comments']}", icon_url=metadata["owner_profile_pic"])
-                    embed.timestamp = post.date_utc
+                    embed.set_author(
+                        name=f"{owner_username} • 💔 {likes} • 💬 {comments}",
+                        icon_url=""  # yt-dlp doesn't provide a profile pic URL
+                    )
+                    response = curl_requests.get(media_url)
+                    if response.status_code != 200:
+                        await message.channel.send("Failed to fetch the Instagram media.")
+                        return
+                    media_data = response.content
+                    upload_date = info.get('upload_date')  # Format "YYYYMMDD"
+                    if upload_date and len(upload_date) == 8:
+                        dt = datetime.strptime(upload_date, "%Y%m%d")
+                        embed.timestamp = dt
                     embed.set_footer(
                         icon_url=message.author.avatar.url,
                         text=f"Requested by {message.author.name}"
                     )
-                    await message.channel.send(embed=embed, file=discord.File(BytesIO(requests.get(media_url).content), filename="reel.mp4"))
-                    # Delete the original message and send the file with embed
+
+                    r = requests.get(media_url)
+                    if r.status_code != 200:
+                        await message.channel.send("Failed to fetch the Instagram media.")
+                        return
+                    await message.channel.send(embed=embed, file=discord.File(BytesIO(r.content), filename="reel.mp4"))
                     await message.delete()
                 except Exception as e:
                     await message.channel.send(f"Failed to process the Instagram link. Error: {e}")

@@ -1,6 +1,6 @@
 from discord.ext import commands
 from discord import app_commands
-import discord
+import discord, string
 
 
 class SpecialWord(commands.Cog):
@@ -33,8 +33,9 @@ class SpecialWord(commands.Cog):
         if message.author.bot:
             return
         content = message.content.lower()
-        words_to_check = {"nigger", "nigga", "fag", "faggot", "chink", "idu"}
-        if any(word in content.split() for word in words_to_check):
+        banned_words = {"nigger", "nigga", "idu"}
+        words = [word.strip(string.punctuation).lower() for word in content.split()]
+        if any(word in banned_words or (word.endswith("s") and word[:-1] in banned_words) for word in words):
             await self.increment_word_count(message.author)
 
     @app_commands.command(name="leaderboard", description="Displays the global leaderboard")
