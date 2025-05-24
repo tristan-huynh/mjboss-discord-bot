@@ -149,6 +149,7 @@ class ReactionListener(commands.Cog):
                 reel_url = instagram_match.group(1)
                 try:
                     ydl_opts = {
+                        "format": "bestvideo[ext=mp4]+bestaudio[abr<=128]/best",
                         'skip_download': True,
                         'quiet': False,
                         'noplaylist': True,
@@ -166,10 +167,15 @@ class ReactionListener(commands.Cog):
                     comments = info.get('comment_count', "N/A")
 
                     media_url = None
-                    if 'formats' in info and info['formats']:
-                        media_url = info['formats'][-1].get('url')
-                    else:
-                        media_url = info.get('url')
+                    for fmt in info.get("formats", []):
+                        # look for a format that has BOTH audio & video (acodec != "none" and vcodec != "none")
+                        if fmt.get("acodec") != "none" and fmt.get("vcodec") != "none" and fmt.get("ext") == "mp4":
+                            media_url = fmt["url"]
+                            break
+
+                    # fallback to the generic URL
+                    if not media_url:
+                        media_url = info.get("url")
                     
                     if not media_url:
                         await message.channel.send("No downloadable media found.")

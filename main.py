@@ -80,7 +80,7 @@ async def on_ready():
             while True:
                 for activity in activities:
                     await bot.change_presence(activity=activity)
-                    await asyncio.sleep(60)  # Wait 60 minutes
+                    await asyncio.sleep(3600)  # Wait 60 minutes
 
         bot.loop.create_task(cycle_activities())
         synced = await bot.tree.sync()
