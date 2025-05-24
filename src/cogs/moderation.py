@@ -190,12 +190,12 @@ class Moderation(commands.Cog):
         
         try:
             message_id = int(message_id) 
-            message = await interaction.channel.fetch_message(message_id)
+            target_message = await interaction.channel.fetch_message(message_id)
         except discord.NotFound:
             await interaction.followup.send("Message not found.", ephemeral=False)
             return
-        deleted = await interaction.channel.purge(limit=amount + 1, after=message.created_at)
-        await interaction.followup.send(f"Purged {len(deleted) - 1} messages.", ephemeral=False)
+        deleted = await interaction.channel.purge(limit=amount + 1, after=target_message.created_at, before=interaction.created_at)
+        await interaction.followup.send(f"Purged {len(deleted)} messages.", ephemeral=False)
 
     @app_commands.command(name="nickname", description="Change a user's nickname")
     @app_commands.describe(member="The member to change the nickname for", nickname="The new nickname")
