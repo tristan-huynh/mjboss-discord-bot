@@ -1,1 +1,1 @@
-# mjboss discord bot
+# mjboss
