@@ -1,6 +1,7 @@
 from discord.ext import commands
 from discord import app_commands
 import discord, asyncio 
+from datetime import timedelta
 
 
 class Moderation(commands.Cog):
@@ -237,6 +238,31 @@ class Moderation(commands.Cog):
         warnings = "No warnings found."  # Replace with actual warning retrieval logic
         await interaction.response.send_message(f"Warnings for {member.mention}: {warnings}", ephemeral=False)
     
+    @app_commands.command(name="mute", description="Mute a user")
+    @app_commands.describe(member="The member to mute", reason="The reason for muting", duration="The duration of the mute in minutes")
+    @blacklist_check()
+    async def mute(self, interaction: discord.Interaction, member: discord.Member, reason: str = None, duration: int = None):
+        if not interaction.user.guild_permissions.moderate_members:
+            await interaction.response.send_message("You do not have permission to mute members.", ephemeral=False)
+            return
+        if duration is None or not isinstance(duration, int) or duration < 1 or duration > 10080:
+            await interaction.response.send_message("Please provide a duration in minutes (1-10080).", ephemeral=False)
+            return
+        if reason is None:
+            reason = "No reason provided"
+        try:
+            until = discord.utils.utcnow() + timedelta(minutes=duration)
+            await member.timeout(until, reason=reason)
+            await interaction.response.send_message(
+                f"{member.mention} is a LOSER. {reason}. SAD!",
+                ephemeral=False
+            )
+        except discord.Forbidden:
+            await interaction.response.send_message("I do not have permission to mute this user.", ephemeral=False)
+        except Exception as e:
+            await interaction.response.send_message(f"Failed to mute: {e}", ephemeral=False)
+
+    @mute.error
     @show_warnings.error
     @warn_user.error
     @nickname.error

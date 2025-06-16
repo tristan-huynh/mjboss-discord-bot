@@ -36,14 +36,31 @@ class Utils(commands.Cog):
         embed.set_footer(icon_url=self.bot.user.avatar.url, text=f"{self.bot.user.name} v{self.bot.version}")
         await interaction.followup.send(embed=embed, ephemeral=False)
         
-    @app_commands.command(name="avatar", description="Get the avatar of a user")
-    @app_commands.describe(user="The user to get the avatar of")
+    @app_commands.command(name="avatar", description="Get the avatar of a user or the server icon")
+    @app_commands.describe(
+        user="The user to get the avatar of (leave blank to use your own avatar)",
+        server="Set to true to get the user's server icon instead of a user avatar"
+    )
     @blacklist_check()
-    async def avatar(self, interaction: discord.Interaction, user: discord.User):
+    async def avatar(self, interaction: discord.Interaction, user: discord.User = None, server: bool = False):
         await interaction.response.defer(ephemeral=False)
-        
-        embed = discord.Embed(title=f"{user.name}'s Avatar", color=self.bot.embed_color)
-        embed.set_image(url=user.avatar.url)
+        if server:
+            member = interaction.guild.get_member(user.id) if user else interaction.guild.get_member(interaction.user.id)
+            if member is None:
+                return await interaction.followup.send("User not found in this server.", ephemeral=False)
+
+            if member.guild_avatar:
+                avatar_url = member.guild_avatar.url
+                title = f"{member.name}'s Server-Specific Avatar"
+            else:
+                avatar_url = member.avatar.url
+                title = f"{member.name}'s Global Avatar (No server-specific avatar set)"
+        else:
+            target = user or interaction.user
+            avatar_url = target.avatar.url
+            title = f"{target.name}'s Avatar"
+        embed = discord.Embed(title=title, color=self.bot.embed_color)
+        embed.set_image(url=avatar_url)
         embed.timestamp = discord.utils.utcnow()
         embed.set_footer(icon_url=self.bot.user.avatar.url, text=f"{self.bot.user.name} v{self.bot.version}")
         await interaction.followup.send(embed=embed, ephemeral=False)

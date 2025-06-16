@@ -30,10 +30,9 @@ class SpecialWord(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.author.bot:
-            return
+
         content = message.content.lower()
-        banned_words = {"nigger", "nigga", "idu"}
+        banned_words = {"nigger", "nigga"}
         words = [word.strip(string.punctuation).lower() for word in content.split()]
         if any(word in banned_words or (word.endswith("s") and word[:-1] in banned_words) for word in words):
             await self.increment_word_count(message.author)

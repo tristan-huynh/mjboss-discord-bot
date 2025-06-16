@@ -69,11 +69,14 @@ async def on_ready():
             await bot.load_extension(extension)
     try:
         activities = [
+            discord.Activity(type=discord.ActivityType.watching, name="Ben Shapiro Podcast"),
             discord.Activity(type=discord.ActivityType.playing, name="Copilot 365 Pro+ (for work and school) (new)"),
             discord.Activity(type=discord.ActivityType.listening, name="Alan Walker"),
             discord.Activity(type=discord.ActivityType.playing, name="with my cock"),
-            discord.Activity(type=discord.ActivityType.watching, name="Ben Shapiro Podcast"),
             discord.Activity(type=discord.ActivityType.listening, name="Joe Rogan Experience"),
+            discord.Activity(type=discord.ActivityType.watching, name="porn"),
+            discord.Activity(type=discord.ActivityType.playing, name="Geometry Dash"),
+            discord.Activity(type=discord.ActivityType.listening, name="Kevin Macleod")
         ]
 
         async def cycle_activities():
@@ -93,5 +96,7 @@ async def on_ready():
 #     if interaction.type == discord.InteractionType.application_command:
 #         logging.debug(f"Command {interaction.command.name} invoked by {interaction.user.name}#{interaction.user.discriminator} (ID: {interaction.user.id}) in {interaction.guild.name} (ID: {interaction.guild.id})")
 
-
-bot.run(TOKEN)
+try:
+    bot.run(TOKEN)
+except Exception as e:
+    logging.critical(f"{e}")
